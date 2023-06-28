@@ -1,0 +1,389 @@
+cmake_minimum_required(VERSION 3.13)
+# 3.13 because of target_link_options
+set(CMAKE_POLICY_DEFAULT_CMP0048 NEW)
+
+project(onnx2c
+	VERSION 0.0.1
+	LANGUAGES C CXX
+	)
+set (CMAKE_CXX_STANDARD 11)
+set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -Wall ")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wall -Wfatal-errors")
+
+#add_subdirectory(cmake_timestamp)
+
+find_package(Protobuf REQUIRED)
+include_directories(${Protobuf_INCLUDE_DIRS})
+include_directories(src)
+
+add_custom_command(
+	OUTPUT ${CMAKE_CURRENT_BINARY_DIR}/onnx.pb.cc ${CMAKE_CURRENT_BINARY_DIR}/onnx.pb.h
+	COMMAND protoc --proto_path=${CMAKE_CURRENT_SOURCE_DIR}/onnx/onnx/ --cpp_out=. ${CMAKE_CURRENT_SOURCE_DIR}/onnx/onnx/onnx.proto
+	MAIN_DEPENDENCY ${CMAKE_CURRENT_SOURCE_DIR}/onnx/onnx/onnx.proto
+	)
+
+  add_library(airutil_lib STATIC
+	airutil/air_builder.cxx
+	airutil/air_scope.cxx
+	airutil/air_dst.cxx
+        )
+  target_compile_options(airutil_lib
+	PRIVATE
+	-I${CMAKE_CURRENT_SOURCE_DIR}/onnxwhirl
+	-I${CMAKE_CURRENT_SOURCE_DIR}/airutil
+	-Wall
+	-m64
+	-D_SGI_SOURCE
+	-Dlinux
+	-D_LANGUAGE_C_PLUS_PLUS
+	-std=c++98
+	-Wformat
+	-funsigned-char
+	-D__GNU_BUG_WORKAROUND
+	-D_NOTHREADS
+	-Wno-deprecated
+	-Wno-unused-result
+	-DVENDOR_OSP
+	-D_LEGO_CLONER
+	-DBACK_END
+	-Dlonglong
+	-DSTD_MONGOOSE_LOC='"/usr/lib32/cmplrs"'
+	-DMONGOOSE_BE
+	-D_LONGLONG
+	-D_SVR4_SOURCE
+	-D_NEW_SYMTAB
+	-D__MIPS_AND_IA64_ELF_H
+	-DIs_True_On
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/targdir/include
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/jfe/libb2w/global/x8664/
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/be/com
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/be/region
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/be/vho
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/be/lno
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/common/com
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/common/com/x8664
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/common/targ_inf.ess
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/common/util
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/common/util/x8664
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/be/be
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/be/be/x8664
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/common/instrument
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/ipa/local
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/ipa/main/optimize
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/targdir/targ_info
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/common/util
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/be
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/be/com/x8664
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/be/cg
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/be/cg/x8664
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/be/opt
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/be/lno
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/be/region
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/be/whirl2c
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/be/whirl2f
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/be/vho
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/ipa/local
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/ipa/main/analyze
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/ipa/main/optimize
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/ipa/common
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/common/instrument
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/include
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/targdir/include/libelf
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/include/gnu
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/be/ld_plugin
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include
+	-fPIC
+	-DTARG_X8664
+	-D__STDC_LIMIT_MACROS
+	-DKEY=KEY
+	-DOSP_OPT
+	-DPATHSCALE_MERGE
+	-DPSC_TO_OPEN64
+	-DSHARED_BUILD
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/targdir/include
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/include
+	-g
+	-O0
+	-D_MIPSEL
+	-D_LONGLONG
+	-D_MIPS_SZINT=32
+	-D_MIPS_SZPTR=64
+	-D_MIPS_SZLONG=64
+	-D_LP64
+	-MMD
+	)
+
+  add_library(onnx2whirl_lib STATIC
+	${CMAKE_CURRENT_BINARY_DIR}/onnx.pb.cc
+	onnx2whirl/onnxgraph.cxx
+  )
+
+add_library(air_lib STATIC
+	air/lib/common/com/config.cxx
+	air/lib/common/com/const.cxx
+	air/lib/common/com/controls.cxx
+	air/lib/common/com/dwarf_DST.cxx
+	air/lib/common/com/dwarf_DST_dump.cxx
+	air/lib/common/com/dwarf_DST_mem.cxx
+	air/lib/common/com/dwarf_DST_producer.cxx
+	air/lib/common/com/err_host.cxx
+	air/lib/common/com/glob.cxx
+	air/lib/common/com/ir_bcom.cxx
+	air/lib/common/com/irbdata.cxx
+	air/lib/common/com/ir_bread.cxx
+	air/lib/common/com/ir_bwrite.cxx
+	air/lib/common/com/ir_reader.cxx
+	air/lib/common/com/mtypes.cxx
+	air/lib/common/com/opcode_core.cxx
+	air/lib/common/com/opcode.cxx
+	air/lib/common/com/pu_info.cxx
+	air/lib/common/com/strtab.cxx
+	air/lib/common/com/symtab.cxx
+	air/lib/common/com/symtab_verify.cxx
+	air/lib/common/com/wn.cxx
+	air/lib/common/com/wn_map.cxx
+	air/lib/common/com/wn_pragmas.cxx
+	air/lib/common/com/wn_util.cxx
+	air/lib/common/com/wn_simp.cxx
+	air/lib/common/com/wutil.cxx
+	air/lib/common/com/x8664/config_targ.cxx
+	air/lib/common/com/x8664/config_platform.c
+	air/lib/common/com/x8664/config_host.c
+	air/lib/common/com/x8664/config_elf_targ.cxx
+	air/lib/common/com/x8664/targ_const.cxx
+	air/lib/common/com/xstats.cxx
+	air/lib/common/util/errors.cxx
+	air/lib/common/util/cxx_memory.cxx
+	air/lib/common/util/options_stack.cxx
+	air/lib/common/util/vcg.cxx
+	air/lib/common/util/bitset.c
+	air/lib/common/util/c_a_to_q.c
+	air/lib/common/util/c_q_add.c
+	air/lib/common/util/c_q_div.c
+	air/lib/common/util/c_q_mul.c
+	air/lib/common/util/c_q_neg.c
+	air/lib/common/util/c_q_rel.c
+	air/lib/common/util/c_q_sqrt.c
+	air/lib/common/util/c_q_sub.c
+	air/lib/common/util/c_q_to_a.c
+	air/lib/common/util/c_qtenscale.c
+	air/lib/common/util/dso.c
+	air/lib/common/util/file_util.c
+	air/lib/common/util/flags.c
+	air/lib/common/util/linklist.c
+	air/lib/common/util/memory.c
+	air/lib/common/util/mstack.c
+	air/lib/common/util/priority_queue.c
+	air/lib/common/util/quadsim.c
+	air/lib/common/util/resource.c
+	air/lib/common/util/tlog.c
+	air/lib/common/util/tracing.c
+	air/lib/common/util/util.c
+	air/lib/common/util/vstring.c
+	air/lib/common/util/x8664/c_qwmultu.c
+) 
+
+target_compile_options(air_lib
+	PRIVATE
+	-m64
+	-D_SGI_SOURCE
+	-Dlinux
+	-D_LANGUAGE_C_PLUS_PLUS
+	-std=c++98
+	-Wformat
+	-funsigned-char
+	-D__GNU_BUG_WORKAROUND
+	-D_NOTHREADS
+	-Wno-deprecated
+	-Wno-unused-result
+	-DVENDOR_OSP
+	-D_LEGO_CLONER
+	-DBACK_END
+	-Dlonglong
+	-DSTD_MONGOOSE_LOC='"/usr/lib32/cmplrs"'
+	-DMONGOOSE_BE
+	-D_LONGLONG
+	-D_SVR4_SOURCE
+	-D_NEW_SYMTAB
+	-D__MIPS_AND_IA64_ELF_H
+	-DIs_True_On
+	-DNO_VALGRIND
+	-fPIC
+	-DTARG_X8664
+	-D__STDC_LIMIT_MACROS
+	-DKEY=KEY
+	-DOSP_OPT
+	-DPATHSCALE_MERGE
+	-DPSC_TO_OPEN64
+	-DSHARED_BUILD
+	-g
+	-O0
+	-D_MIPSEL
+	-D_LONGLONG
+	-D_MIPS_SZINT=32
+	-D_MIPS_SZPTR=64
+	-D_MIPS_SZLONG=64
+	-D_LP64
+	-MMD
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/targdir/include
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/jfe/libb2w/global/x8664/
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/be/com
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/be/region
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/be/vho
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/be/lno
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/common/com
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/common/com/x8664
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/common/targ_inf.ess
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/common/util
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/common/util/x8664
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/be/be
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/be/be/x8664
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/common/instrument
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/ipa/local
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/ipa/main/optimize
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/targdir/targ_info
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/common/util
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/be
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/be/com/x8664
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/be/cg
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/be/cg/x8664
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/be/opt
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/be/lno
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/be/region
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/be/whirl2c
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/be/whirl2f
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/be/vho
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/ipa/local
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/ipa/main/analyze
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/ipa/main/optimize
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/ipa/common
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/common/instrument
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/include
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/targdir/include/libelf
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/include/gnu
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/be/ld_plugin
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/targdir/include
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/include
+	-I${CMAKE_CURRENT_SOURCE_DIR}/air/include//libb2w/global/x8664
+)
+
+target_compile_options(onnx2whirl_lib
+	PUBLIC
+		-I${CMAKE_CURRENT_BINARY_DIR}
+	PRIVATE
+		-I${CMAKE_CURRENT_SOURCE_DIR}/onnxwhirl
+		-I${CMAKE_CURRENT_SOURCE_DIR}/airutil
+	-m64
+	-D_SGI_SOURCE
+	-Dlinux
+	-D_LANGUAGE_C_PLUS_PLUS
+	-std=c++98
+	-Wformat
+	-funsigned-char
+	-D__GNU_BUG_WORKAROUND
+	-D_NOTHREADS
+	-Wno-deprecated
+	-Wno-unused-result
+	-DVENDOR_OSP
+	-D_LEGO_CLONER
+	-DBACK_END
+	-Dlonglong
+	-DSTD_MONGOOSE_LOC='"/usr/lib32/cmplrs"'
+	-DMONGOOSE_BE
+	-D_LONGLONG
+	-D_SVR4_SOURCE
+	-D_NEW_SYMTAB
+	-D__MIPS_AND_IA64_ELF_H
+	-DIs_True_On
+	-DNO_VALGRIND
+	-fPIC
+	-DTARG_X8664
+	-D__STDC_LIMIT_MACROS
+	-DKEY=KEY
+	-DOSP_OPT
+	-DPATHSCALE_MERGE
+	-DPSC_TO_OPEN64
+	-DSHARED_BUILD
+	-g
+	-O0
+	-D_MIPSEL
+	-D_LONGLONG
+	-D_MIPS_SZINT=32
+	-D_MIPS_SZPTR=64
+	-D_MIPS_SZLONG=64
+	-D_LP64
+	-MMD
+	-std=c++11
+		-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/common/com
+		-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/common/com/x8664
+		-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/common/util
+		-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/targdir/include
+	)
+
+add_executable( onnx2whirl
+	onnx2whirl/main.cxx
+	onnx2whirl/options.cxx
+	)
+
+target_compile_options(onnx2whirl
+	PRIVATE
+		-I${CMAKE_CURRENT_SOURCE_DIR}/onnxwhirl
+		-I${CMAKE_CURRENT_SOURCE_DIR}/airutil
+		-I${CMAKE_CURRENT_SOURCE_DIR}/aixlog/include
+		-I${CMAKE_CURRENT_SOURCE_DIR}/args
+	-m64
+	-D_SGI_SOURCE
+	-Dlinux
+	-D_LANGUAGE_C_PLUS_PLUS
+	-std=c++98
+	-Wformat
+	-funsigned-char
+	-D__GNU_BUG_WORKAROUND
+	-D_NOTHREADS
+	-Wno-deprecated
+	-Wno-unused-result
+	-DVENDOR_OSP
+	-D_LEGO_CLONER
+	-DBACK_END
+	-Dlonglong
+	-DSTD_MONGOOSE_LOC='"/usr/lib32/cmplrs"'
+	-DMONGOOSE_BE
+	-D_LONGLONG
+	-D_SVR4_SOURCE
+	-D_NEW_SYMTAB
+	-D__MIPS_AND_IA64_ELF_H
+	-DIs_True_On
+	-DNO_VALGRIND
+	-fPIC
+	-DTARG_X8664
+	-D__STDC_LIMIT_MACROS
+	-DKEY=KEY
+	-DOSP_OPT
+	-DPATHSCALE_MERGE
+	-DPSC_TO_OPEN64
+	-DSHARED_BUILD
+	-g
+	-O0
+	-D_MIPSEL
+	-D_LONGLONG
+	-D_MIPS_SZINT=32
+	-D_MIPS_SZPTR=64
+	-D_MIPS_SZLONG=64
+	-D_LP64
+	-MMD
+	-std=c++11
+		-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/common/com
+		-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/common/com/x8664
+		-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/common/util
+		-I${CMAKE_CURRENT_SOURCE_DIR}/air/include/targdir/include
+	)
+#target_link_libraries(onnx2whirl airutil_lib air_lib onnx2whirl_lib ${Protobuf_LIBRARIES} timestamp)
+target_link_libraries(onnx2whirl airutil_lib air_lib onnx2whirl_lib ${Protobuf_LIBRARIES})
+
+#enable_testing()
+#add_subdirectory(test)
+
+# The Google Benchmark library-subrepo
+#option(BENCHMARK_ENABLE_TESTING "Tests for the 'benchmark' subrepo" OFF)
+#add_subdirectory(benchmark)
